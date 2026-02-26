@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Анимация открытия пака</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            background-color: #1a1a2e;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        .container {
+            background: linear-gradient(145deg, #16213e, #0f3460);
+            border-radius: 40px;
+            padding: 30px;
+            box-shadow: 0 20px 30px rgba(0, 0, 0, 0.6);
+        }
+        .player-card {
+            width: 360px;
+            height: 520px;
+            background: linear-gradient(145deg, #e0e0e0, #f5f5f5);
+            border-radius: 30px;
+            overflow: hidden;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.4), inset 0 0 10px rgba(255, 255, 255, 0.5);
+            position: relative;
+            border: 3px solid gold;
+        }
+        .stage {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            background-color: #f0f0f0;
+            transition: opacity 0.3s ease;
+        }
+        /* Сцена 0: Начало */
+        .stage-start {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            font-size: 2.5rem;
+            font-weight: bold;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+            cursor: pointer;
+        }
+        .stage-start span {
+            background: rgba(255,255,255,0.2);
+            padding: 15px 30px;
+            border-radius: 50px;
+            border: 2px solid white;
+            box-shadow: 0 0 20px rgba(255,255,255,0.5);
+        }
+        /* Сцена 1: Белая вспышка */
+        .stage-flash {
+            background: white;
+        }
+        /* Сцена 2, 3, 4: Изображения */
+        .stage-image {
+            background-color: #2c3e50;
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
+            padding: 20px;
+        }
+        .image-caption {
+            position: absolute;
+            bottom: 20px;
+            left: 0;
+            right: 0;
+            color: #333;
+            font-weight: bold;
+            text-shadow: 0 1px 2px white;
+            background: rgba(255, 255, 255, 0.7);
+            padding: 8px;
+            font-size: 1.2rem;
+            backdrop-filter: blur(5px);
+        }
+        .controls {
+            display: flex;
+            justify-content: center;
+            margin-top: 30px;
+        }
+        .repeat-btn {
+            background: gold;
+            color: #0f3460;
+            border: none;
+            font-size: 1.5rem;
+            font-weight: bold;
+            padding: 15px 40px;
+            border-radius: 60px;
+            cursor: pointer;
+            box-shadow: 0 8px 0 #b8860b, 0 10px 20px rgba(0,0,0,0.3);
+            transition: 0.1s ease;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+        .repeat-btn:active {
+            transform: translateY(8px);
+            box-shadow: 0 0 0 #b8860b, 0 5px 15px rgba(0,0,0,0.3);
+        }
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="player-card" id="playerCard">
+            <!-- Сцена 0: Начало (НАЖМИ) -->
+            <div id="stage0" class="stage stage-start" onclick="startAnimation()">
+                <span>НАЖМИ</span>
+            </div>
+
+            <!-- Сцена 1: Белая вспышка (изначально скрыта) -->
+            <div id="stage1" class="stage stage-flash hidden"></div>
+
+            <!-- Сцена 2: Страна (изначально скрыта) -->
+            <div id="stage2" class="stage stage-image hidden">
+                <!-- Ссылки нужно ЗАМЕНИТЬ на прямые с lh3 -->
+                <div class="image-caption">СТРАНА</div>
+            </div>
+
+            <!-- Сцена 3: Клуб (изначально скрыта) -->
+            <div id="stage3" class="stage stage-image hidden">
+                <div class="image-caption">КЛУБ</div>
+            </div>
+
+            <!-- Сцена 4: Карточка игрока (изначально скрыта) -->
+            <div id="stage4" class="stage stage-image hidden">
+                <div class="image-caption">ИГРОК</div>
+            </div>
+        </div>
+
+        <div class="controls">
+            <button class="repeat-btn" onclick="resetAndStart()">🔄 Повторить анимацию</button>
+        </div>
+    </div>
+
+    <script>
+        // === ВАЖНО: ЗАМЕНИТЕ ЭТИ ССЫЛКИ НА ВАШИ ПРЯМЫЕ ССЫЛКИ С lh3 ===
+        const IMAGE_URLS = {
+            country: "https://via.placeholder.com/300x400/ffcc00/000000?text=Флаг+Дагестана", // Замените!
+            club: "https://via.placeholder.com/300x400/00ccff/000000?text=Анжи",                // Замените!
+            player: "https://via.placeholder.com/300x400/ff6699/000000?text=Карточка+игрока"   // Замените!
+        };
+        // =================================================================
+
+        // Получаем все сцены
+        const stage0 = document.getElementById('stage0');
+        const stage1 = document.getElementById('stage1');
+        const stage2 = document.getElementById('stage2');
+        const stage3 = document.getElementById('stage3');
+        const stage4 = document.getElementById('stage4');
+
+        // Применяем фоновые изображения (после замены ссылок)
+        function setBackgrounds() {
+            stage2.style.backgroundImage = `url('${IMAGE_URLS.country}')`;
+            stage3.style.backgroundImage = `url('${IMAGE_URLS.club}')`;
+            stage4.style.backgroundImage = `url('${IMAGE_URLS.player}')`;
+        }
+        setBackgrounds();
+
+        // Функция для скрытия всех сцен
+        function hideAllStages() {
+            stage0.classList.add('hidden');
+            stage1.classList.add('hidden');
+            stage2.classList.add('hidden');
+            stage3.classList.add('hidden');
+            stage4.classList.add('hidden');
+        }
+
+        // Функция для показа одной сцены по индексу
+        function showStage(index) {
+            hideAllStages();
+            switch(index) {
+                case 0: stage0.classList.remove('hidden'); break;
+                case 1: stage1.classList.remove('hidden'); break;
+                case 2: stage2.classList.remove('hidden'); break;
+                case 3: stage3.classList.remove('hidden'); break;
+                case 4: stage4.classList.remove('hidden'); break;
+            }
+        }
+
+        // Таймеры для анимации
+        let timers = [];
+
+        // Основная функция анимации
+        function startAnimation() {
+            // Очищаем предыдущие таймеры, если они есть
+            timers.forEach(timer => clearTimeout(timer));
+            timers = [];
+
+            // Показываем белую вспышку (сцена 1)
+            showStage(1);
+
+            // Через 2 секунды показываем Страну (сцена 2)
+            timers.push(setTimeout(() => {
+                showStage(2);
+            }, 2000));
+
+            // Через 4 секунды после старта (т.е. через 2 сек после страны) показываем Клуб (сцена 3)
+            timers.push(setTimeout(() => {
+                showStage(3);
+            }, 4000));
+
+            // Через 6 секунд после старта (т.е. через 2 сек после клуба) показываем Карточку (сцена 4)
+            timers.push(setTimeout(() => {
+                showStage(4);
+            }, 6000));
+        }
+
+        // Сброс и запуск анимации заново
+        function resetAndStart() {
+            // Показываем начальный экран
+            showStage(0);
+            // Очищаем таймеры
+            timers.forEach(timer => clearTimeout(timer));
+            timers = [];
+        }
+
+        // Если нужно, можно сделать стартовый экран кликабельным (он уже имеет onclick)
+        // И кнопка "Повторить" тоже сбрасывает на начальный экран
+    </script>
+</body>
+</html>
